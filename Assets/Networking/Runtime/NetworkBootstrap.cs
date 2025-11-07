@@ -13,6 +13,7 @@ namespace Embervale.Networking
         private const string DefaultAddress = "127.0.0.1";
         private const ushort DefaultPort = 7777;
         private const int DefaultMaxPlayers = 8;
+        private static int s_maxPlayers = DefaultMaxPlayers;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Init()
@@ -32,9 +33,11 @@ namespace Embervale.Networking
             var transport = go.AddComponent<UnityTransport>();
 
             nm.NetworkConfig = new NetworkConfig();
+            nm.NetworkConfig.ConnectionApproval = true;
 
             ConfigureTransport(transport, DefaultAddress, DefaultPort);
             ConfigurePlayerPrefab(nm);
+            SetupConnectionApproval(nm);
 
             // Minimal on-screen HUD for quick testing (IMGUI based)
             go.AddComponent<SimpleIpConnectHud>();
@@ -53,7 +56,8 @@ namespace Embervale.Networking
             {
                 nm.NetworkConfig = new NetworkConfig();
             }
-            // No MaxConnectedClients in this NGO version; enforce via transport limit.
+            nm.NetworkConfig.ConnectionApproval = true;
+            SetupConnectionApproval(nm);
             ConfigureTransport(transport, DefaultAddress, DefaultPort);
             ConfigurePlayerPrefab(nm);
         }
@@ -63,7 +67,6 @@ namespace Embervale.Networking
             if (transport == null) return;
             transport.SetConnectionData(address, port);
             transport.MaxConnectAttempts = 10;
-            transport.MaxConnections = DefaultMaxPlayers;
         }
 
         private static void ConfigurePlayerPrefab(NetworkManager nm)
@@ -116,14 +119,13 @@ namespace Embervale.Networking
 
             var transport = nm.GetComponent<UnityTransport>();
             ConfigureTransport(transport, ip, port);
-            // Apply connection cap via transport
-            transport.MaxConnections = Mathf.Clamp(maxPlayers, 1, 256);
+            s_maxPlayers = Mathf.Clamp(maxPlayers, 1, 256);
 
             if (string.IsNullOrEmpty(mode)) return; // Manual start via HUD/Editor
 
             if (Application.isBatchMode)
             {
-                Debug.Log($"[Embervale] Headless mode detected. Starting as '{mode}' on {ip}:{port}, max {nm.NetworkConfig.MaxConnectedClients}");
+                Debug.Log($"[Embervale] Headless mode detected. Starting as '{mode}' on {ip}:{port}, max {s_maxPlayers}");
             }
 
             switch (mode)
@@ -141,6 +143,23 @@ namespace Embervale.Networking
                     Debug.LogWarning($"[Embervale] Unknown -mode '{mode}'.");
                     break;
             }
+        }
+        
+        private static void SetupConnectionApproval(NetworkManager nm)
+        {
+            // avoid multiple subscriptions
+            nm.ConnectionApprovalCallback -= ApprovalCheck;
+            nm.ConnectionApprovalCallback += ApprovalCheck;
+        }
+
+        private static void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        {
+            var nm = NetworkManager.Singleton;
+            int connected = nm.ConnectedClientsIds.Count;
+            bool approve = connected < s_maxPlayers;
+            response.Approved = approve;
+            response.CreatePlayerObject = true;
+            if (!approve) response.Reason = "Server full";
         }
     }
 }
