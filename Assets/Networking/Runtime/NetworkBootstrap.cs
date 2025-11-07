@@ -31,11 +31,7 @@ namespace Embervale.Networking
             var nm = go.AddComponent<NetworkManager>();
             var transport = go.AddComponent<UnityTransport>();
 
-            nm.NetworkConfig = new NetworkConfig
-            {
-                // Set via helper below; PlayerPrefab assigned at runtime
-                MaxConnectedClients = (ushort)DefaultMaxPlayers,
-            };
+            nm.NetworkConfig = new NetworkConfig();
 
             ConfigureTransport(transport, DefaultAddress, DefaultPort);
             ConfigurePlayerPrefab(nm);
@@ -57,10 +53,7 @@ namespace Embervale.Networking
             {
                 nm.NetworkConfig = new NetworkConfig();
             }
-            if (nm.NetworkConfig.MaxConnectedClients <= 0)
-            {
-                nm.NetworkConfig.MaxConnectedClients = (ushort)DefaultMaxPlayers;
-            }
+            // No MaxConnectedClients in this NGO version; enforce via transport limit.
             ConfigureTransport(transport, DefaultAddress, DefaultPort);
             ConfigurePlayerPrefab(nm);
         }
@@ -70,6 +63,7 @@ namespace Embervale.Networking
             if (transport == null) return;
             transport.SetConnectionData(address, port);
             transport.MaxConnectAttempts = 10;
+            transport.MaxConnections = DefaultMaxPlayers;
         }
 
         private static void ConfigurePlayerPrefab(NetworkManager nm)
@@ -81,7 +75,8 @@ namespace Embervale.Networking
             player.name = "PlayerRuntimePrefab";
             UnityEngine.Object.DontDestroyOnLoad(player);
 
-            UnityEngine.Object.Destroy(UnityEngine.Object.FindObjectOfType<Camera>());
+            var cam = UnityEngine.Object.FindFirstObjectByType<Camera>();
+            if (cam != null) UnityEngine.Object.Destroy(cam);
 
             // Add networking components
             player.AddComponent<NetworkObject>();
@@ -121,7 +116,8 @@ namespace Embervale.Networking
 
             var transport = nm.GetComponent<UnityTransport>();
             ConfigureTransport(transport, ip, port);
-            nm.NetworkConfig.MaxConnectedClients = (ushort)Mathf.Clamp(maxPlayers, 1, 256);
+            // Apply connection cap via transport
+            transport.MaxConnections = Mathf.Clamp(maxPlayers, 1, 256);
 
             if (string.IsNullOrEmpty(mode)) return; // Manual start via HUD/Editor
 

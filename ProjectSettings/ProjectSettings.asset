@@ -12,7 +12,7 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: DefaultCompany
+  companyName: Abyssal Game
   productName: Embervale
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
@@ -920,7 +920,7 @@ PlayerSettings:
   qnxGraphicConfPath: 
   apiCompatibilityLevel: 6
   captureStartupLogs: {}
-  activeInputHandler: 1
+  activeInputHandler: 2
   windowsGamepadBackendHint: 0
   cloudProjectId: b04fd8bb-36db-4057-87a2-9715f244bce4
   framebufferDepthMemorylessMode: 0
