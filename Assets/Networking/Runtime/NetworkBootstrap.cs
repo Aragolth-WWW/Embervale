@@ -34,7 +34,7 @@ namespace Embervale.Networking
             nm.NetworkConfig = new NetworkConfig
             {
                 // Set via helper below; PlayerPrefab assigned at runtime
-                MaxConnectedClients = DefaultMaxPlayers,
+                MaxConnectedClients = (ushort)DefaultMaxPlayers,
             };
 
             ConfigureTransport(transport, DefaultAddress, DefaultPort);
@@ -59,7 +59,7 @@ namespace Embervale.Networking
             }
             if (nm.NetworkConfig.MaxConnectedClients <= 0)
             {
-                nm.NetworkConfig.MaxConnectedClients = DefaultMaxPlayers;
+                nm.NetworkConfig.MaxConnectedClients = (ushort)DefaultMaxPlayers;
             }
             ConfigureTransport(transport, DefaultAddress, DefaultPort);
             ConfigurePlayerPrefab(nm);
@@ -148,4 +148,3 @@ namespace Embervale.Networking
         }
     }
 }
-
