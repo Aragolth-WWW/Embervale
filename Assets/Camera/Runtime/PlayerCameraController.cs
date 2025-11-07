@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.Rendering.Universal;
 
 namespace Embervale.CameraSystem
 {
@@ -116,6 +117,8 @@ namespace Embervale.CameraSystem
             var go = new GameObject("PlayerCamera");
             go.transform.SetParent(followTarget, false);
             _cam = go.AddComponent<Camera>();
+            if (go.GetComponent<UniversalAdditionalCameraData>() == null)
+                go.AddComponent<UniversalAdditionalCameraData>();
             go.AddComponent<AudioListener>();
             _camTransform = go.transform;
 
