@@ -79,35 +79,31 @@ namespace Embervale.Networking
         {
             if (nm.NetworkConfig.PlayerPrefab != null) return;
 
-            // Prefer a user-provided prefab from Resources.
+            // Prefer a user-provided prefab asset from Resources.
             // Place a prefab at Assets/Game/Prefabs/Player/Resources/Player_Synty.prefab
-            GameObject prefab = Resources.Load<GameObject>("Player/Player_Synty");
-            GameObject player;
+            var prefab = Resources.Load<GameObject>("Player/Player_Synty");
             if (prefab != null)
             {
-                player = UnityEngine.Object.Instantiate(prefab);
-                player.name = "PlayerRuntimePrefab";
-            }
-            else
-            {
-                // Create a lightweight runtime prefab to act as the player.
-                player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                player.name = "PlayerRuntimePrefab";
+                if (prefab.GetComponent<NetworkObject>() == null)
+                {
+                    Debug.LogError("Player_Synty.prefab is missing NetworkObject. Please add NetworkObject (and optionally NetworkTransform + SimplePlayerController) to the prefab variant.");
+                }
+                nm.NetworkConfig.PlayerPrefab = prefab; // use asset directly
+                return;
             }
 
+            // Fallback: create a simple runtime template; keep it active (hidden) so instantiated clones are active
+            var player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            player.name = "PlayerRuntimePrefab";
+            player.hideFlags = HideFlags.HideInHierarchy;
             UnityEngine.Object.DontDestroyOnLoad(player);
 
-            var cam = UnityEngine.Object.FindFirstObjectByType<Camera>();
-            if (cam != null) UnityEngine.Object.Destroy(cam);
-
-            // Ensure networking and local camera/controller exist
             if (player.GetComponent<NetworkObject>() == null) player.AddComponent<NetworkObject>();
             if (player.GetComponent<NetworkTransform>() == null) player.AddComponent<NetworkTransform>();
             if (player.GetComponent<SimplePlayerController>() == null) player.AddComponent<SimplePlayerController>();
             if (player.GetComponent<Embervale.CameraSystem.PlayerCameraController>() == null)
                 player.AddComponent<Embervale.CameraSystem.PlayerCameraController>();
 
-            player.SetActive(false); // mimic prefab disabled state
             nm.NetworkConfig.PlayerPrefab = player;
         }
 
