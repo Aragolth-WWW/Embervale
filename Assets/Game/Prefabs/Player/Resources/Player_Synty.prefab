@@ -65,6 +65,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1370136899775164, guid: 376f10543468d08499265dee2684c3bf, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5897669374490910535}
+    - targetCorrespondingSourceObject: {fileID: 1370136899775164, guid: 376f10543468d08499265dee2684c3bf, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -4302946787436515896}
   m_SourcePrefab: {fileID: 100100000, guid: 376f10543468d08499265dee2684c3bf, type: 3}
 --- !u!1 &6555029430615252557 stripped
 GameObject:
@@ -137,3 +140,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Embervale.Networking.SimplePlayerController
   moveSpeed: 5
   rotateSpeed: 360
+--- !u!114 &-4302946787436515896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6555029430615252557}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80708a07e6746b34cb115f4f84f47296, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Embervale.CameraSystem.PlayerCameraController
+  followTarget: {fileID: 0}
+  startInFirstPerson: 1
+  mouseSensitivity: 2
+  clampPitchMin: -80
+  clampPitchMax: 80
+  fpsHeight: 1.7
+  tpsDistance: 4
+  tpsHeight: 1.7
+  tpsShoulder: 0.5

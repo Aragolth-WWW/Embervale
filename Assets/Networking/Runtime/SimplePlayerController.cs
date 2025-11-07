@@ -12,6 +12,7 @@ namespace Embervale.Networking
         [SerializeField] private float rotateSpeed = 360f;
 
         private Vector2 _lastInput;
+        private static int s_spawnIndex;
 
         public override void OnNetworkSpawn()
         {
@@ -30,6 +31,18 @@ namespace Embervale.Networking
                     var m = camCtrl.GetType().GetMethod("EnsureRig", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                     if (m != null) m.Invoke(camCtrl, null);
                 }
+            }
+
+            if (IsServer)
+            {
+                // Spawn players around a circle so we don't overlap scene geometry at origin
+                var radius = 5f;
+                var height = 1.5f;
+                var idx = s_spawnIndex++;
+                var angle = (idx % 8) * Mathf.PI * 2f / 8f;
+                var pos = new Vector3(Mathf.Cos(angle) * radius, height, Mathf.Sin(angle) * radius);
+                transform.position = pos;
+                transform.rotation = Quaternion.Euler(0f, -Mathf.Rad2Deg * angle, 0f);
             }
         }
 
