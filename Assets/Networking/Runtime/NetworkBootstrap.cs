@@ -33,6 +33,8 @@ namespace Embervale.Networking
             var transport = go.AddComponent<UnityTransport>();
 
             nm.NetworkConfig = new NetworkConfig();
+            // Explicitly assign transport (NGO 1.9.x doesn't auto-bind)
+            nm.NetworkConfig.NetworkTransport = transport;
             nm.NetworkConfig.ConnectionApproval = true;
 
             ConfigureTransport(transport, DefaultAddress, DefaultPort);
@@ -52,6 +54,8 @@ namespace Embervale.Networking
             {
                 transport = nm.gameObject.AddComponent<UnityTransport>();
             }
+            // Ensure the transport is wired into the network config
+            nm.NetworkConfig.NetworkTransport = transport;
             if (nm.NetworkConfig == null)
             {
                 nm.NetworkConfig = new NetworkConfig();
