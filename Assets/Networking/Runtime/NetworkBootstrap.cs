@@ -77,19 +77,33 @@ namespace Embervale.Networking
         {
             if (nm.NetworkConfig.PlayerPrefab != null) return;
 
-            // Create a lightweight runtime prefab to act as the player.
-            var player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            player.name = "PlayerRuntimePrefab";
+            // Prefer a user-provided prefab from Resources.
+            // Place a prefab at Assets/Game/Prefabs/Player/Resources/Player_Synty.prefab
+            GameObject prefab = Resources.Load<GameObject>("Player/Player_Synty");
+            GameObject player;
+            if (prefab != null)
+            {
+                player = UnityEngine.Object.Instantiate(prefab);
+                player.name = "PlayerRuntimePrefab";
+            }
+            else
+            {
+                // Create a lightweight runtime prefab to act as the player.
+                player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                player.name = "PlayerRuntimePrefab";
+            }
+
             UnityEngine.Object.DontDestroyOnLoad(player);
 
             var cam = UnityEngine.Object.FindFirstObjectByType<Camera>();
             if (cam != null) UnityEngine.Object.Destroy(cam);
 
-            // Add networking components
-            player.AddComponent<NetworkObject>();
-            player.AddComponent<NetworkTransform>();
-            player.AddComponent<SimplePlayerController>();
-            player.AddComponent<Embervale.CameraSystem.PlayerCameraController>();
+            // Ensure networking and local camera/controller exist
+            if (player.GetComponent<NetworkObject>() == null) player.AddComponent<NetworkObject>();
+            if (player.GetComponent<NetworkTransform>() == null) player.AddComponent<NetworkTransform>();
+            if (player.GetComponent<SimplePlayerController>() == null) player.AddComponent<SimplePlayerController>();
+            if (player.GetComponent<Embervale.CameraSystem.PlayerCameraController>() == null)
+                player.AddComponent<Embervale.CameraSystem.PlayerCameraController>();
 
             player.SetActive(false); // mimic prefab disabled state
             nm.NetworkConfig.PlayerPrefab = player;

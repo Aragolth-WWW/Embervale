@@ -13,9 +13,21 @@ namespace Embervale.Networking
 
         private Vector2 _lastInput;
 
+        public override void OnNetworkSpawn()
+        {
+            if (IsOwner)
+            {
+                // Ensure a local camera/controller exists on the spawned object
+                if (GetComponent<Embervale.CameraSystem.PlayerCameraController>() == null)
+                {
+                    gameObject.AddComponent<Embervale.CameraSystem.PlayerCameraController>();
+                }
+            }
+        }
+
         private void Update()
         {
-            if (IsOwner && !IsServer)
+            if (IsOwner)
             {
                 var h = Input.GetAxisRaw("Horizontal");
                 var v = Input.GetAxisRaw("Vertical");
@@ -36,6 +48,12 @@ namespace Embervale.Networking
                 {
                     _lastInput = input;
                     SubmitInputServerRpc(input);
+                    if (IsServer)
+                    {
+                        // When hosting, the ServerRpc executes locally but also
+                        // update immediately to keep local responsiveness if needed.
+                        _lastInput = input;
+                    }
                 }
             }
         }

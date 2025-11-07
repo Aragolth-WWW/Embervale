@@ -64,6 +64,17 @@ namespace Embervale.CameraSystem
             _isFirstPerson = startInFirstPerson;
             var euler = followTarget.eulerAngles;
             _yaw = euler.y; _pitch = 0f;
+
+            // Disable other cameras to ensure we see through the player camera
+            var others = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
+            foreach (var c in others)
+            {
+                if (c != _cam) c.enabled = false;
+            }
+
+            // Lock cursor for look; toggle with Esc/Right Mouse
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
 
         public override void OnNetworkDespawn()
@@ -78,6 +89,10 @@ namespace Embervale.CameraSystem
 
             // Toggle view
             if (Input.GetKeyDown(KeyCode.V)) _isFirstPerson = !_isFirstPerson;
+
+            // Cursor lock toggle
+            if (Input.GetKeyDown(KeyCode.Escape)) { Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
+            if (Input.GetMouseButtonDown(1)) { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
 
             // Mouse look
             var dx = Input.GetAxisRaw("Mouse X") * mouseSensitivity;
@@ -107,4 +122,3 @@ namespace Embervale.CameraSystem
         }
     }
 }
-
