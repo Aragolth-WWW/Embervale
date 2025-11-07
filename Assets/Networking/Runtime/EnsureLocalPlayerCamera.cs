@@ -26,15 +26,7 @@ namespace Embervale.Networking
             ctrl.EnsureSetup();
 
             _done = true;
-            // Optionally disable any remaining active cameras except our player camera
-            var cams = FindObjectsByType<Camera>(FindObjectsSortMode.None);
-            foreach (var c in cams)
-            {
-                if (ctrl != null && c.transform == ctrl.transform.Find("PlayerCamera")) continue;
-                if (c != null) c.enabled = false;
-            }
             enabled = false;
         }
     }
 }
-

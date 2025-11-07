@@ -49,16 +49,19 @@ namespace Embervale.Networking
 
             if (GUILayout.Button("Start Server"))
             {
+                Debug.Log("[Embervale] StartServer clicked");
                 nm.StartServer();
                 _show = false;
             }
             if (GUILayout.Button("Start Host"))
             {
+                Debug.Log("[Embervale] StartHost clicked");
                 nm.StartHost();
                 _show = false;
             }
             if (GUILayout.Button("Connect Client"))
             {
+                Debug.Log("[Embervale] StartClient clicked");
                 nm.StartClient();
                 _show = false;
             }
@@ -66,4 +69,3 @@ namespace Embervale.Networking
         }
     }
 }
-

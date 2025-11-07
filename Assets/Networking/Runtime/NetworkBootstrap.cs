@@ -140,10 +140,7 @@ namespace Embervale.Networking
 
             if (string.IsNullOrEmpty(mode)) return; // Manual start via HUD/Editor
 
-            if (Application.isBatchMode)
-            {
-                Debug.Log($"[Embervale] Headless mode detected. Starting as '{mode}' on {ip}:{port}, max {s_maxPlayers}");
-            }
+            Debug.Log($"[Embervale] Starting as '{mode}' on {ip}:{port}, max {s_maxPlayers}");
 
             switch (mode)
             {
