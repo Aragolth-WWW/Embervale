@@ -53,28 +53,7 @@ namespace Embervale.CameraSystem
             if (!IsOwner) return;
             Current = this;
             if (followTarget == null) followTarget = transform;
-
-            // Create/attach camera
-            var go = new GameObject("PlayerCamera");
-            go.transform.SetParent(followTarget, false);
-            _cam = go.AddComponent<Camera>();
-            go.AddComponent<AudioListener>();
-            _camTransform = go.transform;
-
-            _isFirstPerson = startInFirstPerson;
-            var euler = followTarget.eulerAngles;
-            _yaw = euler.y; _pitch = 0f;
-
-            // Disable other cameras to ensure we see through the player camera
-            var others = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
-            foreach (var c in others)
-            {
-                if (c != _cam) c.enabled = false;
-            }
-
-            // Lock cursor for look; toggle with Esc/Right Mouse
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            EnsureRig();
         }
 
         public override void OnNetworkDespawn()
@@ -103,7 +82,9 @@ namespace Embervale.CameraSystem
 
         private void LateUpdate()
         {
-            if (!IsOwner || _camTransform == null || followTarget == null) return;
+            if (!IsOwner) return;
+            if (_camTransform == null) { EnsureRig(); if (_camTransform == null) return; }
+            if (followTarget == null) followTarget = transform;
 
             var rot = Quaternion.Euler(_pitch, _yaw, 0f);
 
@@ -119,6 +100,30 @@ namespace Embervale.CameraSystem
                 _camTransform.position = pivot + offset;
                 _camTransform.rotation = rot;
             }
+        }
+
+        private void EnsureRig()
+        {
+            // Create the camera rig if missing (works even if added after spawn)
+            if (_camTransform != null) return;
+            if (followTarget == null) followTarget = transform;
+
+            var go = new GameObject("PlayerCamera");
+            go.transform.SetParent(followTarget, false);
+            _cam = go.AddComponent<Camera>();
+            go.AddComponent<AudioListener>();
+            _camTransform = go.transform;
+
+            _isFirstPerson = startInFirstPerson;
+            var euler = followTarget.eulerAngles; _yaw = euler.y; _pitch = 0f;
+
+            var others = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
+            foreach (var c in others)
+            {
+                if (c != _cam) c.enabled = false;
+            }
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
     }
 }

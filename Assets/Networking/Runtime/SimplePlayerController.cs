@@ -17,10 +17,18 @@ namespace Embervale.Networking
         {
             if (IsOwner)
             {
-                // Ensure a local camera/controller exists on the spawned object
-                if (GetComponent<Embervale.CameraSystem.PlayerCameraController>() == null)
+                var camCtrl = GetComponent<Embervale.CameraSystem.PlayerCameraController>();
+                if (camCtrl == null)
                 {
-                    gameObject.AddComponent<Embervale.CameraSystem.PlayerCameraController>();
+                    camCtrl = gameObject.AddComponent<Embervale.CameraSystem.PlayerCameraController>();
+                }
+                // Ensure rig even if added post-spawn
+                var ensureRig = camCtrl as MonoBehaviour;
+                if (ensureRig != null)
+                {
+                    // call via reflection-safe method name if available
+                    var m = camCtrl.GetType().GetMethod("EnsureRig", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                    if (m != null) m.Invoke(camCtrl, null);
                 }
             }
         }
