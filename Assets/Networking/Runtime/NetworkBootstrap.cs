@@ -77,34 +77,31 @@ namespace Embervale.Networking
 
         private static void ConfigurePlayerPrefab(NetworkManager nm)
         {
-            if (nm.NetworkConfig.PlayerPrefab != null) return;
-
-            // Prefer a user-provided prefab asset from Resources.
-            // Place a prefab at Assets/Game/Prefabs/Player/Resources/Player_Synty.prefab
-            var prefab = Resources.Load<GameObject>("Player/Player_Synty");
-            if (prefab != null)
+            // Always attempt to use the Synty prefab from Resources
+            var synty = Resources.Load<GameObject>("Player/Player_Synty");
+            if (synty != null)
             {
-                if (prefab.GetComponent<NetworkObject>() == null)
+                if (synty.GetComponent<NetworkObject>() == null)
                 {
-                    Debug.LogError("Player_Synty.prefab is missing NetworkObject. Please add NetworkObject (and optionally NetworkTransform + SimplePlayerController) to the prefab variant.");
+                    Debug.LogError("[Embervale] Player_Synty.prefab found but missing NetworkObject. Add NetworkObject (and NetworkTransform + SimplePlayerController) to the prefab.");
                 }
-                nm.NetworkConfig.PlayerPrefab = prefab; // use asset directly
-                return;
+                else
+                {
+                    nm.NetworkConfig.PlayerPrefab = synty;
+                    Debug.Log("[Embervale] Using PlayerPrefab: Player_Synty (Resources)");
+                    return;
+                }
             }
 
-            // Fallback: create a simple runtime template; keep it active (hidden) so instantiated clones are active
+            // Fallback: create a simple runtime capsule (scene instance). Not ideal, but keeps testing unblocked.
             var player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             player.name = "PlayerRuntimePrefab";
-            player.hideFlags = HideFlags.HideInHierarchy;
             UnityEngine.Object.DontDestroyOnLoad(player);
-
             if (player.GetComponent<NetworkObject>() == null) player.AddComponent<NetworkObject>();
             if (player.GetComponent<NetworkTransform>() == null) player.AddComponent<NetworkTransform>();
             if (player.GetComponent<SimplePlayerController>() == null) player.AddComponent<SimplePlayerController>();
-            if (player.GetComponent<Embervale.CameraSystem.PlayerCameraController>() == null)
-                player.AddComponent<Embervale.CameraSystem.PlayerCameraController>();
-
             nm.NetworkConfig.PlayerPrefab = player;
+            Debug.LogWarning("[Embervale] Using fallback PlayerRuntimePrefab (capsule). Place Player_Synty in Resources to override.");
         }
 
         private static void AutoStartFromCli(NetworkManager nm)
