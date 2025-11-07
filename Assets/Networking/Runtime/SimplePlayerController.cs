@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using Embervale.CameraSystem;
 
 namespace Embervale.Networking
 {
@@ -18,7 +19,19 @@ namespace Embervale.Networking
             {
                 var h = Input.GetAxisRaw("Horizontal");
                 var v = Input.GetAxisRaw("Vertical");
-                var input = new Vector2(h, v);
+                Vector2 input;
+                var cam = PlayerCameraController.Current;
+                if (cam != null)
+                {
+                    var dir = cam.PlanarRight * h + cam.PlanarForward * v;
+                    if (dir.sqrMagnitude > 1f) dir.Normalize();
+                    input = new Vector2(dir.x, dir.z);
+                }
+                else
+                {
+                    input = new Vector2(h, v);
+                }
+
                 if (input != _lastInput)
                 {
                     _lastInput = input;
@@ -46,4 +59,3 @@ namespace Embervale.Networking
         }
     }
 }
-

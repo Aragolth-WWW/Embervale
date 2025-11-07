@@ -85,6 +85,7 @@ namespace Embervale.Networking
             player.AddComponent<NetworkObject>();
             player.AddComponent<NetworkTransform>();
             player.AddComponent<SimplePlayerController>();
+            player.AddComponent<Embervale.CameraSystem.PlayerCameraController>();
 
             player.SetActive(false); // mimic prefab disabled state
             nm.NetworkConfig.PlayerPrefab = player;
