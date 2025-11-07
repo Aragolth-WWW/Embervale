@@ -18,6 +18,7 @@ namespace Embervale.Networking
         {
             if (IsOwner)
             {
+                Debug.Log($"[Embervale] Local player spawned: {gameObject.name}");
                 var camCtrl = GetComponent<Embervale.CameraSystem.PlayerCameraController>();
                 if (camCtrl == null)
                 {
@@ -35,6 +36,7 @@ namespace Embervale.Networking
 
             if (IsServer)
             {
+                Debug.Log($"[Embervale] Server sees player object: {gameObject.name} for client {OwnerClientId}");
                 // Spawn players around a circle so we don't overlap scene geometry at origin
                 var radius = 5f;
                 var height = 1.5f;

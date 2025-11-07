@@ -121,6 +121,7 @@ namespace Embervale.CameraSystem
                 go.AddComponent<UniversalAdditionalCameraData>();
             go.AddComponent<AudioListener>();
             _camTransform = go.transform;
+            Debug.Log($"[Embervale] PlayerCamera created under {followTarget.name}");
 
             _isFirstPerson = startInFirstPerson;
             var euler = followTarget.eulerAngles; _yaw = euler.y; _pitch = 0f;
