@@ -102,6 +102,11 @@ namespace Embervale.CameraSystem
             }
         }
 
+        public void EnsureSetup()
+        {
+            EnsureRig();
+        }
+
         private void EnsureRig()
         {
             // Create the camera rig if missing (works even if added after spawn)

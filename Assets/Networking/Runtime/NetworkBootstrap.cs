@@ -43,6 +43,8 @@ namespace Embervale.Networking
 
             // Minimal on-screen HUD for quick testing (IMGUI based)
             go.AddComponent<SimpleIpConnectHud>();
+            // Ensure local player camera gets attached after start
+            go.AddComponent<EnsureLocalPlayerCamera>();
 
             AutoStartFromCli(nm);
         }
