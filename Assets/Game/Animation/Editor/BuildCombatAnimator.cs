@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -151,12 +152,14 @@ namespace Embervale.Game.Animation.Editor
             // Copy Synty locomotion controller as starting point
             if (!File.Exists(TargetControllerBaseOnlyPath))
             {
-                if (!File.Exists(BaseControllerPath))
+                var source = ResolveBaseControllerPath();
+                if (string.IsNullOrEmpty(source))
                 {
-                    Debug.LogError("Base controller not found: " + BaseControllerPath);
+                    Debug.LogError("Base controller not found. Please import Synty Animation Base Locomotion. Expected something like: " + BaseControllerPath);
                     return;
                 }
-                AssetDatabase.CopyAsset(BaseControllerPath, TargetControllerBaseOnlyPath);
+                AssetDatabase.CopyAsset(source, TargetControllerBaseOnlyPath);
+                Debug.Log("[Embervale] Seeded base-only controller from: " + source);
             }
 
             var ctrl = AssetDatabase.LoadAssetAtPath<AnimatorController>(TargetControllerBaseOnlyPath);
@@ -342,6 +345,31 @@ namespace Embervale.Game.Animation.Editor
             {
                 tr.AddCondition(AnimatorConditionMode.If, 0f, trigger);
             }
+        }
+
+        private static string ResolveBaseControllerPath()
+        {
+            if (File.Exists(BaseControllerPath)) return BaseControllerPath;
+
+            // Try common alternate folder naming used by Synty packages
+            var alt1 = "Assets/Synty/Animation - Base Locomotion/Animations/Polygon/AC_Polygon_Masculine.controller";
+            if (File.Exists(alt1)) return alt1;
+
+            // Search under Assets/Synty for a suitable Polygon controller
+            var guids = AssetDatabase.FindAssets("AC_Polygon_Masculine t:AnimatorController", new[] { "Assets/Synty" });
+            foreach (var g in guids)
+            {
+                var p = AssetDatabase.GUIDToAssetPath(g);
+                if (!string.IsNullOrEmpty(p)) return p;
+            }
+            // Fallback to any AC_Polygon_* controller
+            guids = AssetDatabase.FindAssets("AC_Polygon_* t:AnimatorController", new[] { "Assets/Synty" });
+            foreach (var g in guids)
+            {
+                var p = AssetDatabase.GUIDToAssetPath(g);
+                if (!string.IsNullOrEmpty(p)) return p;
+            }
+            return null;
         }
 
         private static void EnsureParameter(AnimatorController ctrl, string name, AnimatorControllerParameterType type)
