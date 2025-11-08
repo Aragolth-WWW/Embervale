@@ -29,6 +29,9 @@ Player & Camera
 - Camera: local‑only rig with FPS/TPS toggle and URP camera data; body hidden in FPS.
 - Optional foot IK: lightweight `SimpleFootIK` added to child Animator; enable IK Pass on base layer.
 
+Keybinds & Animation
+- See `Docs/KeybindsAndAnimation.md` for the current input map and all Animator parameter names used by locomotion + sword/bow packs.
+
 Animation (Synty Base Locomotion)
 - Driver feeds Synty parameters (MoveSpeed, Strafe X/Z, MovementInputHeld/Pressed/Tapped, IsGrounded, IsCrouching, IsWalking, IsStopped, IsStarting, CurrentGait, IsStrafing, ForwardStrafe, CameraRotationOffset) with Synty‑like damping.
 - Run/Crouch speeds match Synty sample (2.5 m/s, 1.4 m/s); Sprint 7 m/s.
