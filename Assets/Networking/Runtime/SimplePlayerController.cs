@@ -53,6 +53,12 @@ namespace Embervale.Networking
             var driver = GetComponent<SimpleAnimatorDriver>();
             if (driver == null) gameObject.AddComponent<SimpleAnimatorDriver>();
 
+            // Ensure combat scaffolding exists
+            var equip = GetComponent<Embervale.Game.Combat.EquipmentState>();
+            if (equip == null) equip = gameObject.AddComponent<Embervale.Game.Combat.EquipmentState>();
+            var attackCtl = GetComponent<Embervale.Game.Combat.AttackController>();
+            if (attackCtl == null) attackCtl = gameObject.AddComponent<Embervale.Game.Combat.AttackController>();
+
             // Ensure simple foot IK (requires IK Pass enabled in Animator layer)
             var animForIk = GetComponentInChildren<Animator>();
             if (animForIk != null && animForIk.GetComponent<SimpleFootIK>() == null)

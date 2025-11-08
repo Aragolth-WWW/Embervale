@@ -67,6 +67,8 @@ Bow Combat
 - Animator must be Humanoid and have these parameters defined to respond; missing parameters are ignored safely.
 - Root Motion should remain OFF (server-authoritative movement). Jump is animation-only pulse unless vertical motion is later added.
 - Foot IK: enable IK Pass on the base layer to use `Assets/Animation/Runtime/SimpleFootIK.cs`.
+- Combat authoring: use `Tools → Embervale → Combat → Create Sample Assets` to generate starter `WeaponDef_*.asset` and `AttackDef_*.asset` files under `Assets/Game/Combat/Resources`.
+
 
 ## Update Process
 
@@ -74,4 +76,3 @@ When keybinds or parameters change, update this file and the constants in:
 - `Assets/Networking/Runtime/SimpleAnimatorDriver.cs` (parameter names, timing, damping)
 - `Assets/Networking/Runtime/SimplePlayerController.cs` (movement speeds, sprint/crouch inputs)
 - `Assets/Camera/Runtime/PlayerCameraController.cs` (view, cursor handling)
-

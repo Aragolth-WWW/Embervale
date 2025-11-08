@@ -272,6 +272,8 @@ namespace Embervale.Networking
                 {
                     var aiming = Input.GetMouseButton(1);
                     _anim.SetBool(_isAimingHash, aiming);
+                    var equip = GetComponent<Embervale.Game.Combat.EquipmentState>();
+                    if (equip != null && equip.IsAiming.Value != aiming) equip.IsAiming.Value = aiming;
                 }
 
                 // Block (Q hold)
@@ -279,6 +281,8 @@ namespace Embervale.Networking
                 {
                     var blocking = Input.GetKey(KeyCode.Q);
                     _anim.SetBool(_isBlockingHash, blocking);
+                    var equip = GetComponent<Embervale.Game.Combat.EquipmentState>();
+                    if (equip != null && equip.IsBlocking.Value != blocking) equip.IsBlocking.Value = blocking;
                 }
 
                 // Roll (LeftAlt press)
@@ -295,11 +299,17 @@ namespace Embervale.Networking
                     {
                         _anim.ResetTrigger(_attackLightHash);
                         _anim.SetTrigger(_attackLightHash);
+                        var atkCtl = GetComponent<Embervale.Game.Combat.AttackController>();
+                        var aim = transform.forward;
+                        if (atkCtl != null && IsOwner) atkCtl.TryAttackServerRpc(Embervale.Game.Combat.AttackInputKind.Light, aim, 0f);
                     }
                     if (_hasAttackHeavy && (Input.GetMouseButton(0) && Input.GetKey(KeyCode.LeftShift)))
                     {
                         _anim.ResetTrigger(_attackHeavyHash);
                         _anim.SetTrigger(_attackHeavyHash);
+                        var atkCtl = GetComponent<Embervale.Game.Combat.AttackController>();
+                        var aim = transform.forward;
+                        if (atkCtl != null && IsOwner) atkCtl.TryAttackServerRpc(Embervale.Game.Combat.AttackInputKind.Heavy, aim, 0f);
                     }
                 }
 
@@ -320,10 +330,14 @@ namespace Embervale.Networking
                     }
                     if (_hasBowFire && Input.GetMouseButtonUp(0))
                     {
+                        var charge = _bowCharge;
                         _anim.ResetTrigger(_bowFireHash);
                         _anim.SetTrigger(_bowFireHash);
                         _bowCharge = 0f;
                         if (_hasBowDraw) _anim.SetFloat(_bowDrawHash, 0f);
+                        var atkCtl = GetComponent<Embervale.Game.Combat.AttackController>();
+                        var aim = transform.forward;
+                        if (atkCtl != null && IsOwner) atkCtl.TryAttackServerRpc(Embervale.Game.Combat.AttackInputKind.Charged, aim, charge);
                     }
                     if (_hasBowCancel && Input.GetKeyDown(KeyCode.Escape))
                     {

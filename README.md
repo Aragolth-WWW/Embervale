@@ -36,6 +36,12 @@ Animation (Synty Base Locomotion)
 - Driver feeds Synty parameters (MoveSpeed, Strafe X/Z, MovementInputHeld/Pressed/Tapped, IsGrounded, IsCrouching, IsWalking, IsStopped, IsStarting, CurrentGait, IsStrafing, ForwardStrafe, CameraRotationOffset) with Synty‑like damping.
 - Run/Crouch speeds match Synty sample (2.5 m/s, 1.4 m/s); Sprint 7 m/s.
 
+Combat Scaffold
+- Data: `Assets/Game/Combat/Runtime` (WeaponType, AttackDef, WeaponDef, AttackEvent, EquipmentState, AttackController, WeaponRegistry).
+- Create sample assets via menu: `Tools → Embervale → Combat → Create Sample Assets`.
+- Runtime: owner sends `TryAttackServerRpc` (light/heavy/charged); server replicates `LastAttack` which triggers remote animators.
+- Equip replication: `EquipmentState` holds `EquippedItemId`, `WeaponType`, `IsAiming`, `IsBlocking` as NetworkVariables.
+
 Key Files
 - Bootstrap: `Assets/Networking/Runtime/NetworkBootstrap.cs`
 - Player controller: `Assets/Networking/Runtime/SimplePlayerController.cs`
