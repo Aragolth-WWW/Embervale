@@ -32,6 +32,16 @@ Player & Camera
 Keybinds & Animation
 - See `Docs/KeybindsAndAnimation.md` for the current input map and all Animator parameter names used by locomotion + sword/bow packs.
 
+Combat Animator (Build/Assign)
+- Upper-layer (arms-only) builder: Tools -> Embervale -> Animation -> Build Player Combat Controller
+  - Creates/refreshes layer `UnarmedUpper` with triggers `AttackLight`/`AttackHeavy` and assigns to the player prefab.
+- Base-layer-only builder: Tools -> Embervale -> Animation -> Build Player Combat Controller (Base Layer Only)
+  - Wires Any State -> `Unarmed_Light_Base` / `Unarmed_Heavy_Base` on the base layer for a simple, reliable punch test.
+- Quick assign menus:
+  - Assign BaseOnly Controller To Player
+  - Assign UpperLayer Controller To Player
+  Use these to switch approaches quickly when testing.
+
 Animation (Synty Base Locomotion)
 - Driver feeds Synty parameters (MoveSpeed, Strafe X/Z, MovementInputHeld/Pressed/Tapped, IsGrounded, IsCrouching, IsWalking, IsStopped, IsStarting, CurrentGait, IsStrafing, ForwardStrafe, CameraRotationOffset) with Synty‑like damping.
 - Run/Crouch speeds match Synty sample (2.5 m/s, 1.4 m/s); Sprint 7 m/s.
@@ -61,8 +71,10 @@ Build & Headless
 Troubleshooting
 - Fallback capsule spawning: confirm prefab path and that it contains `NetworkObject`, `NetworkTransform`, `SimplePlayerController`, and `PlayerCameraController`.
 - Two AudioListeners warning: the player camera disables other listeners at runtime.
-- T‑pose: ensure an Animator Controller is assigned (Synty AC) and Root Motion is OFF.
+- T-pose: ensure an Animator Controller is assigned (Synty AC) and Root Motion is OFF.
 - Foot IK: enable IK Pass on the Animator base layer for `SimpleFootIK` to take effect.
+ - No punch on LMB: build the Base Layer Only controller and assign it, confirm the two unarmed FBX clips import as Humanoid and preview plays, then watch Animator Parameters for `AttackLight/AttackHeavy` during Play.
+ - Mixamo or Synty clip not animating in Preview: set the FBX Rig = Humanoid (Avatar Definition = Create From This Model), in Animation tab enable Bake Into Pose (Rotation, Y, XZ). See `Docs/Troubleshooting/AnimationSetup.md`.
 
 Repository Hygiene
 - `.gitignore` ignores Unity cache/build/IDE files. Addressables cache is ignored; Packages/ProjectSettings are tracked.
