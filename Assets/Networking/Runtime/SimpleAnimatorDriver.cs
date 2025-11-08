@@ -105,12 +105,30 @@ namespace Embervale.Networking
         private bool _hasIsBlocking;
         private bool _hasRoll;
 
+        // Unarmed layer control so idle doesn't freeze upper body
+        [Header("Unarmed Layer Control")]
+        [SerializeField] private string unarmedLayerName = "UnarmedUpper";
+        [SerializeField] private float unarmedFadeIn = 12f;   // weight per second
+        [SerializeField] private float unarmedFadeOut = 8f;   // weight per second
+        [SerializeField] private float unarmedLightDuration = 0.35f;
+        [SerializeField] private float unarmedHeavyDuration = 0.7f;
+        private int _unarmedLayer = -1;
+        private float _unarmedWeight;
+        private float _unarmedTimer;
+
         private void Awake()
         {
             _anim = GetComponentInChildren<Animator>();
             _lastPos = transform.position;
             if (_anim != null)
             {
+                _unarmedLayer = _anim.GetLayerIndex(unarmedLayerName);
+                if (_unarmedLayer >= 0)
+                {
+                    _anim.SetLayerWeight(_unarmedLayer, 0f);
+                    _unarmedWeight = 0f;
+                    _unarmedTimer = 0f;
+                }
                 _speedHash = Animator.StringToHash(speedParam);
                 _strafeXHash = Animator.StringToHash(strafeXParam);
                 _strafeZHash = Animator.StringToHash(strafeZParam);
@@ -292,24 +310,49 @@ namespace Embervale.Networking
                     _anim.SetTrigger(_rollHash);
                 }
 
-                // Sword attacks (LMB press) / Heavy (LMB+Shift)
-                if (!_hasIsAiming || (_hasIsAiming && !_anim.GetBool(_isAimingHash)))
+                // Unarmed mapping: tap = light, hold = heavy (only when not aiming)
+                var equipState = GetComponent<Embervale.Game.Combat.EquipmentState>();
+                bool isUnarmed = equipState == null || equipState.EquippedWeapon.Value == Embervale.Game.Combat.WeaponType.Unarmed;
+                bool isAimingNow = _hasIsAiming && _anim.GetBool(_isAimingHash);
+                if (isUnarmed && !isAimingNow)
                 {
-                    if (_hasAttackLight && Input.GetMouseButtonDown(0))
+                    if (Input.GetMouseButtonDown(0))
                     {
-                        _anim.ResetTrigger(_attackLightHash);
-                        _anim.SetTrigger(_attackLightHash);
-                        var atkCtl = GetComponent<Embervale.Game.Combat.AttackController>();
-                        var aim = transform.forward;
-                        if (atkCtl != null && IsOwner) atkCtl.TryAttackServerRpc(Embervale.Game.Combat.AttackInputKind.Light, aim, 0f);
+                        _lmbHeld = true;
+                        _lmbDownElapsed = 0f;
+                        _heavyFired = false;
+                        // Fire light immediately for responsive feel (escalates to heavy if held)
+                        if (_hasAttackLight)
+                        {
+                            _anim.ResetTrigger(_attackLightHash);
+                            _anim.SetTrigger(_attackLightHash);
+                        }
+                        var atkCtlDown = GetComponent<Embervale.Game.Combat.AttackController>();
+                        var aimDown = transform.forward;
+                        if (atkCtlDown != null && IsOwner) atkCtlDown.TryAttackServerRpc(Embervale.Game.Combat.AttackInputKind.Light, aimDown, 0f);
+                        if (_unarmedLayer >= 0) _unarmedTimer = Mathf.Max(_unarmedTimer, unarmedLightDuration);
                     }
-                    if (_hasAttackHeavy && (Input.GetMouseButton(0) && Input.GetKey(KeyCode.LeftShift)))
+                    if (_lmbHeld)
                     {
-                        _anim.ResetTrigger(_attackHeavyHash);
-                        _anim.SetTrigger(_attackHeavyHash);
-                        var atkCtl = GetComponent<Embervale.Game.Combat.AttackController>();
-                        var aim = transform.forward;
-                        if (atkCtl != null && IsOwner) atkCtl.TryAttackServerRpc(Embervale.Game.Combat.AttackInputKind.Heavy, aim, 0f);
+                        _lmbDownElapsed += Time.deltaTime;
+                        if (!_heavyFired && _lmbDownElapsed >= _heavyHoldSeconds)
+                        {
+                            // Fire heavy once when threshold passed
+                            if (_hasAttackHeavy)
+                            {
+                                _anim.ResetTrigger(_attackHeavyHash);
+                                _anim.SetTrigger(_attackHeavyHash);
+                            }
+                            var atkCtl = GetComponent<Embervale.Game.Combat.AttackController>();
+                            var aim = transform.forward;
+                            if (atkCtl != null && IsOwner) atkCtl.TryAttackServerRpc(Embervale.Game.Combat.AttackInputKind.Heavy, aim, 0f);
+                            _heavyFired = true;
+                            if (_unarmedLayer >= 0) _unarmedTimer = Mathf.Max(_unarmedTimer, unarmedHeavyDuration);
+                        }
+                        if (Input.GetMouseButtonUp(0))
+                        {
+                            _lmbHeld = false;
+                        }
                     }
                 }
 
@@ -402,6 +445,15 @@ namespace Embervale.Networking
                 var next = Mathf.Abs(cur - target) <= 0.001f ? target : Mathf.SmoothStep(cur, target, t);
                 _anim.SetFloat(_forwardStrafeHash, next);
             }
+            // Drive unarmed layer weight
+            if (_unarmedLayer >= 0)
+            {
+                if (_unarmedTimer > 0f) _unarmedTimer -= Time.deltaTime;
+                float target = _unarmedTimer > 0f ? 1f : 0f;
+                float rate = target > _unarmedWeight ? unarmedFadeIn : unarmedFadeOut;
+                _unarmedWeight = Mathf.MoveTowards(_unarmedWeight, target, rate * Time.deltaTime);
+                _anim.SetLayerWeight(_unarmedLayer, _unarmedWeight);
+            }
         }
 
         private bool _wasMoving;
@@ -413,6 +465,12 @@ namespace Embervale.Networking
         [SerializeField] private float _jumpPulseDuration = 0.2f;
         private float _bowCharge;
         [SerializeField] private float _bowMaxChargeTime = 1.0f;
+        // Unarmed heavy-hold detection
+        private bool _lmbHeld;
+        private bool _heavyFired;
+        private float _lmbDownElapsed;
+        [SerializeField] private float _heavyHoldSeconds = 0.35f;
+        // (moved to top of class) duplicate definitions removed
     }
 
     internal static class AnimatorExtensions

@@ -55,7 +55,7 @@ PrefabInstance:
     - target: {fileID: 95394382489807866, guid: 376f10543468d08499265dee2684c3bf, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: a3a348fc313b53a44ab5b8f348e2a5eb, type: 2}
+      objectReference: {fileID: 9100000, guid: e74b7d2b8df1aa842931fc50a1ec7e36, type: 2}
     - target: {fileID: 95394382489807866, guid: 376f10543468d08499265dee2684c3bf, type: 3}
       propertyPath: m_ApplyRootMotion
       value: 0
@@ -146,8 +146,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd56c8585485c3f4fbad8c48ee788ca4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Embervale.Networking.SimplePlayerController
-  moveSpeed: 5
+  crouchSpeed: 1.4
+  runSpeed: 2.5
+  sprintSpeed: 7
   rotateSpeed: 360
+  groundToSurface: 1
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967291
+  groundRayStart: 0.5
+  groundRayLength: 5
+  groundYOffset: 0
 --- !u!114 &-4302946787436515896
 MonoBehaviour:
   m_ObjectHideFlags: 0
