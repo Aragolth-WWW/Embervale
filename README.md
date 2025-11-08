@@ -1,39 +1,60 @@
-Embervale — Networking M1
+Embervale — Networking + URP + Synty
 
-What’s included
-- Netcode for GameObjects (NGO) + Unity Transport (UTP) in `Packages/manifest.json`.
-- Runtime bootstrap that auto-creates `NetworkManager` + `UnityTransport`, configures defaults, and adds a simple player prefab at runtime.
-- Direct-IP connect HUD (IMGUI) for quick testing.
-- Command-line parsing to start as server/host/client with configurable IP/port/max players.
+Overview
+- Unity 6 (6000.2.8f1), URP, Netcode for GameObjects 1.9.1, Unity Transport 2.3.0.
+- Direct‑IP HUD for quick testing; CLI flags to start server/host/client.
+- Player uses Synty Base Locomotion with server‑auth movement and client‑driven animation parameters.
 
-Defaults
-- Address: `127.0.0.1`
-- Port: `7777`
-- Max players: `8`
+Editor Run
+- Open in Unity 6000.2.8f1 (URP configured).
+- Press Play; HUD (top‑left) can Start Server/Start Host/Connect Client.
 
-Run in Editor
-1) Open the project in Unity 6000.2.8f1.
-2) Press Play; use the on-screen HUD (top-left) to Start Server/Host or Connect Client. Change IP/port as needed.
+Controls
+- Movement: WASD
+- Look/lock: RMB to lock, Esc to unlock
+- View: V toggles FPS/TPS
+- Sprint: Shift (hold)
+- Crouch: Ctrl (hold)
 
-Headless Dedicated Server
-Build (Windows or Linux):
-- Create a normal player build; you can run it headless using flags below. (Optional: install Unity Dedicated Server support for smaller builds.)
+Networking
+- Bootstrap creates/configures `NetworkManager` + `UnityTransport` at runtime.
+- CLI flags (headless/desktop): `-mode server|client|host -ip 127.0.0.1 -port 7777 -maxPlayers 8`
+- Examples:
+  - Windows: `Embervale.exe -batchmode -nographics -mode server -ip 0.0.0.0 -port 7777 -maxPlayers 8`
+  - Linux: `./Embervale.x86_64 -batchmode -nographics -mode server -ip 0.0.0.0 -port 7777 -maxPlayers 8`
 
-Command-line flags:
-- `-batchmode -nographics -mode server -ip 0.0.0.0 -port 7777 -maxPlayers 8`
+Player & Camera
+- Prefab: `Assets/Game/Prefabs/Player/Resources/Player_Synty.prefab` (Resources‑loaded).
+- Animator Controller: Synty `AC_Polygon_Masculine.controller` assigned, Apply Root Motion OFF.
+- Camera: local‑only rig with FPS/TPS toggle and URP camera data; body hidden in FPS.
+- Optional foot IK: lightweight `SimpleFootIK` added to child Animator; enable IK Pass on base layer.
 
-Examples
-- Windows: `Embervale.exe -batchmode -nographics -mode server -ip 0.0.0.0 -port 7777 -maxPlayers 8`
-- Linux: `./Embervale.x86_64 -batchmode -nographics -mode server -ip 0.0.0.0 -port 7777 -maxPlayers 8`
+Animation (Synty Base Locomotion)
+- Driver feeds Synty parameters (MoveSpeed, Strafe X/Z, MovementInputHeld/Pressed/Tapped, IsGrounded, IsCrouching, IsWalking, IsStopped, IsStarting, CurrentGait, IsStrafing, ForwardStrafe, CameraRotationOffset) with Synty‑like damping.
+- Run/Crouch speeds match Synty sample (2.5 m/s, 1.4 m/s); Sprint 7 m/s.
 
-Client connect
-- Start the game normally and use the HUD. Enter the server’s IP and port, then press Connect Client.
+Key Files
+- Bootstrap: `Assets/Networking/Runtime/NetworkBootstrap.cs`
+- Player controller: `Assets/Networking/Runtime/SimplePlayerController.cs`
+- Animator driver: `Assets/Networking/Runtime/SimpleAnimatorDriver.cs`
+- Camera controller: `Assets/Camera/Runtime/PlayerCameraController.cs`
+- Foot IK (optional): `Assets/Animation/Runtime/SimpleFootIK.cs`
+- HUD: `Assets/Networking/Runtime/SimpleIpConnectHud.cs`
 
-Notes
-- The temporary player uses a capsule with a simple server-authoritative controller and `NetworkTransform` replication. This will be replaced with a Synty-based character later.
-- The HUD hides automatically on headless servers (batchmode).
+Resources Prefab Override
+- The game tries to load `Player_Synty` from Resources. If not found, it falls back to a runtime capsule.
+- Place the prefab at `Assets/Game/Prefabs/Player/Resources/Player_Synty.prefab`.
 
-Next steps (M2/M3)
-- Replace temp player with Synty character prefab and add Cinemachine cameras (FPS/TPS toggle).
-- Build out lobby/relay support and Steamworks integration for discovery.
+Build & Headless
+- Create a normal player build and use CLI flags above for dedicated servers.
+- The HUD is editor‑only/headless‑aware and won’t interfere on servers.
 
+Troubleshooting
+- Fallback capsule spawning: confirm prefab path and that it contains `NetworkObject`, `NetworkTransform`, `SimplePlayerController`, and `PlayerCameraController`.
+- Two AudioListeners warning: the player camera disables other listeners at runtime.
+- T‑pose: ensure an Animator Controller is assigned (Synty AC) and Root Motion is OFF.
+- Foot IK: enable IK Pass on the Animator base layer for `SimpleFootIK` to take effect.
+
+Repository Hygiene
+- `.gitignore` ignores Unity cache/build/IDE files. Addressables cache is ignored; Packages/ProjectSettings are tracked.
+- Large import `.unitypackage` files are removed from tracking and ignored going forward.

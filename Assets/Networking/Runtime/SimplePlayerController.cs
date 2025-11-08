@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using Embervale.CameraSystem;
+using Embervale.Animation;
 
 namespace Embervale.Networking
 {
@@ -8,10 +9,24 @@ namespace Embervale.Networking
     [RequireComponent(typeof(NetworkObject))]
     public class SimplePlayerController : NetworkBehaviour
     {
-        [SerializeField] private float moveSpeed = 5f;
+        [Header("Movement (Synty-calibrated m/s)")]
+        [SerializeField] private float crouchSpeed = 1.4f; // Synty _walkSpeed
+        [SerializeField] private float runSpeed = 2.5f;   // Synty _runSpeed
+        [SerializeField] private float sprintSpeed = 7f;   // Synty _sprintSpeed
         [SerializeField] private float rotateSpeed = 360f;
+        [Header("Grounding")]
+        [SerializeField] private bool groundToSurface = true;
+        [SerializeField] private LayerMask groundLayers = Physics.DefaultRaycastLayers;
+        [SerializeField] private float groundRayStart = 0.5f;
+        [SerializeField] private float groundRayLength = 5f;
+        [SerializeField] private float groundYOffset = 0f; // adjust if pivot not at feet
 
         private Vector2 _lastInput;
+        private bool _wantsSprint;
+        private bool _wantsCrouch;
+        private NetworkVariable<bool> _isCrouching = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+        public bool IsCrouching => _isCrouching.Value;
         private static int s_spawnIndex;
 
         public override void OnNetworkSpawn()
@@ -32,6 +47,24 @@ namespace Embervale.Networking
                     var m = camCtrl.GetType().GetMethod("EnsureRig", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                     if (m != null) m.Invoke(camCtrl, null);
                 }
+            }
+
+            // Ensure animator driver exists so animations can react to movement when a controller is assigned
+            var driver = GetComponent<SimpleAnimatorDriver>();
+            if (driver == null) gameObject.AddComponent<SimpleAnimatorDriver>();
+
+            // Ensure simple foot IK (requires IK Pass enabled in Animator layer)
+            var animForIk = GetComponentInChildren<Animator>();
+            if (animForIk != null && animForIk.GetComponent<SimpleFootIK>() == null)
+            {
+                animForIk.gameObject.AddComponent<SimpleFootIK>();
+            }
+
+            // If the character has an Animator without a controller, emit a clear hint once.
+            var anim = GetComponentInChildren<Animator>();
+            if (anim != null && anim.runtimeAnimatorController == null)
+            {
+                Debug.LogWarning("[Embervale] Player has an Animator but no Controller assigned (T-pose). Assign a Humanoid Animator Controller with Idle/Walk/Run, or import Synty/Mixamo animations.");
             }
 
             if (IsServer)
@@ -67,15 +100,22 @@ namespace Embervale.Networking
                     input = new Vector2(h, v);
                 }
 
-                if (input != _lastInput)
+                var wantsSprint = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+                var wantsCrouch = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+                if (input != _lastInput || wantsSprint != _wantsSprint || wantsCrouch != _wantsCrouch)
                 {
                     _lastInput = input;
-                    SubmitInputServerRpc(input);
+                    _wantsSprint = wantsSprint;
+                    _wantsCrouch = wantsCrouch;
+                    SubmitInputServerRpc(input, wantsSprint, wantsCrouch);
                     if (IsServer)
                     {
                         // When hosting, the ServerRpc executes locally but also
                         // update immediately to keep local responsiveness if needed.
                         _lastInput = input;
+                        _wantsSprint = wantsSprint;
+                        _wantsCrouch = wantsCrouch;
+                        _isCrouching.Value = wantsCrouch;
                     }
                 }
             }
@@ -87,16 +127,28 @@ namespace Embervale.Networking
             var dir = new Vector3(_lastInput.x, 0, _lastInput.y);
             if (dir.sqrMagnitude > 0.0001f)
             {
-                transform.position += dir.normalized * moveSpeed * Time.fixedDeltaTime;
+                var speed = _wantsCrouch ? crouchSpeed : (_wantsSprint ? sprintSpeed : runSpeed);
+                transform.position += dir.normalized * speed * Time.fixedDeltaTime;
                 var targetRot = Quaternion.LookRotation(dir.normalized, Vector3.up);
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, rotateSpeed * Time.fixedDeltaTime);
+            }
+            if (groundToSurface)
+            {
+                var start = transform.position + Vector3.up * groundRayStart;
+                if (Physics.Raycast(start, Vector3.down, out var hit, groundRayLength, groundLayers, QueryTriggerInteraction.Ignore))
+                {
+                    var p = transform.position; p.y = hit.point.y + groundYOffset; transform.position = p;
+                }
             }
         }
 
         [ServerRpc]
-        private void SubmitInputServerRpc(Vector2 input)
+        private void SubmitInputServerRpc(Vector2 input, bool wantsSprint, bool wantsCrouch)
         {
             _lastInput = Vector2.ClampMagnitude(input, 1f);
+            _wantsSprint = wantsSprint;
+            _wantsCrouch = wantsCrouch;
+            _isCrouching.Value = wantsCrouch;
         }
     }
 }

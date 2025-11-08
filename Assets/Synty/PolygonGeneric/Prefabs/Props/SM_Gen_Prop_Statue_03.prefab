@@ -31,13 +31,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4724797836873258210}
-  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &9040362314873831933
 MeshFilter:
@@ -97,20 +97,12 @@ MeshCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4724797836873258210}
   m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
   m_IsTrigger: 0
-  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
+  serializedVersion: 4
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -6816558091224702851, guid: 9dbf11c6713fb20429455ffdc109473e, type: 2}
+  m_Mesh: {fileID: -6816558091224702851, guid: 705e32c2e5e5de34bb372f5253864f7d, type: 2}
 --- !u!64 &23916501
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -119,20 +111,12 @@ MeshCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4724797836873258210}
   m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
   m_IsTrigger: 0
-  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
+  serializedVersion: 4
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -1807561081645000431, guid: 9dbf11c6713fb20429455ffdc109473e, type: 2}
+  m_Mesh: {fileID: -1807561081645000431, guid: 705e32c2e5e5de34bb372f5253864f7d, type: 2}
 --- !u!64 &23916502
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -141,20 +125,12 @@ MeshCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4724797836873258210}
   m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
   m_IsTrigger: 0
-  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
+  serializedVersion: 4
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -6394847413528226870, guid: 9dbf11c6713fb20429455ffdc109473e, type: 2}
+  m_Mesh: {fileID: -6394847413528226870, guid: 705e32c2e5e5de34bb372f5253864f7d, type: 2}
 --- !u!64 &23916503
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -163,20 +139,12 @@ MeshCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4724797836873258210}
   m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
   m_IsTrigger: 0
-  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
+  serializedVersion: 4
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: 3328173525463859195, guid: 9dbf11c6713fb20429455ffdc109473e, type: 2}
+  m_Mesh: {fileID: 3328173525463859195, guid: 705e32c2e5e5de34bb372f5253864f7d, type: 2}
 --- !u!64 &23916504
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -185,20 +153,12 @@ MeshCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4724797836873258210}
   m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
   m_IsTrigger: 0
-  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
+  serializedVersion: 4
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -9066073920613659549, guid: 9dbf11c6713fb20429455ffdc109473e, type: 2}
+  m_Mesh: {fileID: -9066073920613659549, guid: 705e32c2e5e5de34bb372f5253864f7d, type: 2}
 --- !u!64 &23916505
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -207,17 +167,9 @@ MeshCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4724797836873258210}
   m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
   m_IsTrigger: 0
-  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
+  serializedVersion: 4
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: 3795197576640073408, guid: 9dbf11c6713fb20429455ffdc109473e, type: 2}
+  m_Mesh: {fileID: 3795197576640073408, guid: 705e32c2e5e5de34bb372f5253864f7d, type: 2}

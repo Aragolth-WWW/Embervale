@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Networking.Transport;
 using Unity.Netcode.Transports.UTP;
+using System.Linq;
 
 namespace Embervale.Networking
 {
@@ -78,7 +79,14 @@ namespace Embervale.Networking
         private static void ConfigurePlayerPrefab(NetworkManager nm)
         {
             // Always attempt to use the Synty prefab from Resources
-            var synty = Resources.Load<GameObject>("Player/Player_Synty");
+            var synty = Resources.Load<GameObject>("Player/Player_Synty")
+                        ?? Resources.Load<GameObject>("Player_Synty");
+            if (synty == null)
+            {
+                // Last-chance: look up by name anywhere under Resources
+                var all = Resources.LoadAll<GameObject>(string.Empty);
+                synty = all.FirstOrDefault(p => p != null && p.name == "Player_Synty");
+            }
             if (synty != null)
             {
                 if (synty.GetComponent<NetworkObject>() == null)
@@ -96,7 +104,6 @@ namespace Embervale.Networking
             // Fallback: create a simple runtime capsule (scene instance). Not ideal, but keeps testing unblocked.
             var player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             player.name = "PlayerRuntimePrefab";
-            UnityEngine.Object.DontDestroyOnLoad(player);
             if (player.GetComponent<NetworkObject>() == null) player.AddComponent<NetworkObject>();
             if (player.GetComponent<NetworkTransform>() == null) player.AddComponent<NetworkTransform>();
             if (player.GetComponent<SimplePlayerController>() == null) player.AddComponent<SimplePlayerController>();

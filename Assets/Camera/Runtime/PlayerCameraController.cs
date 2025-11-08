@@ -13,6 +13,7 @@ namespace Embervale.CameraSystem
         [Header("General")]
         [SerializeField] private Transform followTarget; // set to player root if null
         [SerializeField] private bool startInFirstPerson = true;
+        [SerializeField] private bool hideBodyInFirstPerson = true;
 
         [Header("Sensitivity")]
         [SerializeField] private float mouseSensitivity = 2.0f;
@@ -32,6 +33,7 @@ namespace Embervale.CameraSystem
         private float _yaw;
         private float _pitch;
         private bool _isFirstPerson;
+        private SkinnedMeshRenderer[] _renderers;
 
         public Vector3 PlanarForward
         {
@@ -101,6 +103,15 @@ namespace Embervale.CameraSystem
                 _camTransform.position = pivot + offset;
                 _camTransform.rotation = rot;
             }
+
+            if (hideBodyInFirstPerson && _renderers != null)
+            {
+                var hide = _isFirstPerson;
+                for (int i = 0; i < _renderers.Length; i++)
+                {
+                    if (_renderers[i] != null) _renderers[i].enabled = !hide;
+                }
+            }
         }
 
         public void EnsureSetup()
@@ -119,7 +130,7 @@ namespace Embervale.CameraSystem
             _cam = go.AddComponent<Camera>();
             if (go.GetComponent<UniversalAdditionalCameraData>() == null)
                 go.AddComponent<UniversalAdditionalCameraData>();
-            go.AddComponent<AudioListener>();
+            var myListener = go.AddComponent<AudioListener>();
             _camTransform = go.transform;
             Debug.Log($"[Embervale] PlayerCamera created under {followTarget.name}");
 
@@ -130,6 +141,17 @@ namespace Embervale.CameraSystem
             foreach (var c in others)
             {
                 if (c != _cam) c.enabled = false;
+            }
+            // Ensure exactly one active AudioListener (ours)
+            var listeners = Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None);
+            foreach (var l in listeners)
+            {
+                if (l != myListener) l.enabled = false;
+            }
+
+            if (hideBodyInFirstPerson)
+            {
+                _renderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
             }
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
