@@ -46,7 +46,9 @@ namespace Embervale.Game.Animation.Editor
                 return;
             }
 
-            // Ensure required parameters exist on the controller
+            // Ensure required parameters exist on the controller.
+            // Runtime input now flows solely through PlayerInputBridge (Input System),
+            // so AttackLight/AttackHeavy triggers must always be present.
             EnsureParameter(ctrl, "AttackLight", AnimatorControllerParameterType.Trigger);
             EnsureParameter(ctrl, "AttackHeavy", AnimatorControllerParameterType.Trigger);
 
@@ -374,9 +376,14 @@ namespace Embervale.Game.Animation.Editor
 
         private static void EnsureParameter(AnimatorController ctrl, string name, AnimatorControllerParameterType type)
         {
-            foreach (var p in ctrl.parameters)
+            for (int i = 0; i < ctrl.parameters.Length; i++)
             {
-                if (p.name == name) return;
+                var p = ctrl.parameters[i];
+                if (p.name != name) continue;
+                if (p.type == type) return;
+                // Replace with desired type if mismatched (e.g., bool -> trigger).
+                ctrl.RemoveParameter(i);
+                break;
             }
             ctrl.AddParameter(name, type);
         }

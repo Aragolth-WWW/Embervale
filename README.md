@@ -41,6 +41,7 @@ Combat Animator (Build/Assign)
   - Assign BaseOnly Controller To Player
   - Assign UpperLayer Controller To Player
   Use these to switch approaches quickly when testing.
+- Input path: `SimpleAnimatorDriver` now listens only to the Input System attack action (`PlayerInputBridge`). The temporary `G` key fallback used during debugging has been removed, so bind LMB (or your preferred device) inside the actions asset when testing combat.
 
 Animation (Synty Base Locomotion)
 - Driver feeds Synty parameters (MoveSpeed, Strafe X/Z, MovementInputHeld/Pressed/Tapped, IsGrounded, IsCrouching, IsWalking, IsStopped, IsStarting, CurrentGait, IsStrafing, ForwardStrafe, CameraRotationOffset) with Synty‑like damping.

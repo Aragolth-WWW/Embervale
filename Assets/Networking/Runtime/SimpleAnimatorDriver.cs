@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 using Embervale.CameraSystem;
+using Embervale.Game.Input;
 
 namespace Embervale.Networking
 {
@@ -115,11 +116,15 @@ namespace Embervale.Networking
         private int _unarmedLayer = -1;
         private float _unarmedWeight;
         private float _unarmedTimer;
+        private PlayerInputBridge _input;
+        private bool _loggedMissingAttackLight;
+        private bool _loggedMissingAttackHeavy;
 
         private void Awake()
         {
             _anim = GetComponentInChildren<Animator>();
             _lastPos = transform.position;
+            _input = GetComponent<PlayerInputBridge>();
             if (_anim != null)
             {
                 _unarmedLayer = _anim.GetLayerIndex(unarmedLayerName);
@@ -171,6 +176,16 @@ namespace Embervale.Networking
                 _hasIsJumping = _anim.HasParameterOfType(_isJumpingHash, AnimatorControllerParameterType.Bool);
                 _hasAttackLight = _anim.HasParameterOfType(_attackLightHash, AnimatorControllerParameterType.Trigger);
                 _hasAttackHeavy = _anim.HasParameterOfType(_attackHeavyHash, AnimatorControllerParameterType.Trigger);
+                if (!_hasAttackLight && !_loggedMissingAttackLight)
+                {
+                    _loggedMissingAttackLight = true;
+                    Debug.LogWarning($"[Embervale] {_anim.gameObject.name} Animator missing AttackLight Trigger.");
+                }
+                if (!_hasAttackHeavy && !_loggedMissingAttackHeavy)
+                {
+                    _loggedMissingAttackHeavy = true;
+                    Debug.LogWarning($"[Embervale] {_anim.gameObject.name} Animator missing AttackHeavy Trigger.");
+                }
                 _hasIsAiming = _anim.HasParameterOfType(_isAimingHash, AnimatorControllerParameterType.Bool);
                 _hasBowDraw = _anim.HasParameterOfType(_bowDrawHash, AnimatorControllerParameterType.Float);
                 _hasBowFire = _anim.HasParameterOfType(_bowFireHash, AnimatorControllerParameterType.Trigger);
@@ -178,6 +193,11 @@ namespace Embervale.Networking
                 _hasIsBlocking = _anim.HasParameterOfType(_isBlockingHash, AnimatorControllerParameterType.Bool);
                 _hasRoll = _anim.HasParameterOfType(_rollHash, AnimatorControllerParameterType.Trigger);
             }
+        }
+
+        private void OnEnable()
+        {
+            if (_input == null) _input = GetComponent<PlayerInputBridge>();
         }
 
         private void Update()
@@ -195,17 +215,18 @@ namespace Embervale.Networking
             // Prefer input-driven speed for owner to avoid FixedUpdate sampling spikes
             if (IsOwner)
             {
-                var h = Input.GetAxisRaw("Horizontal");
-                var v = Input.GetAxisRaw("Vertical");
+                var moveInputIS = _input != null ? Vector2.ClampMagnitude(_input.Move, 1f) : Vector2.zero;
+                var moveInputLegacy = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+                var moveInput = moveInputIS.sqrMagnitude > 0f ? moveInputIS : moveInputLegacy;
                 var cam = PlayerCameraController.Current;
                 Vector3 moveWS = Vector3.zero;
                 if (cam != null)
                 {
-                    moveWS = cam.PlanarRight * h + cam.PlanarForward * v;
+                    moveWS = cam.PlanarRight * moveInput.x + cam.PlanarForward * moveInput.y;
                 }
                 else
                 {
-                    moveWS = new Vector3(h, 0f, v);
+                    moveWS = new Vector3(moveInput.x, 0f, moveInput.y);
                 }
                 var mag = moveWS.magnitude;
                 desiredDirWS = mag > 0.001f ? moveWS.normalized : transform.forward;
@@ -213,7 +234,8 @@ namespace Embervale.Networking
                 // Determine target speed tier (crouch/run/sprint)
                 var ctrl = GetComponent<SimplePlayerController>();
                 bool isCrouching = ctrl != null ? ctrl.IsCrouching : crouching;
-                bool isSprinting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+                if (_input != null && _input.CrouchHeld) isCrouching = true;
+                bool isSprinting = (_input != null && _input.SprintHeld) || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
                 float tier = isCrouching ? walkSpeed : (isSprinting ? sprintSpeed : runSpeed);
                 desiredSpeed = tier * Mathf.Clamp01(mag);
             }
@@ -267,10 +289,21 @@ namespace Embervale.Networking
             // Jump + Combat input (owner only)
             if (IsOwner)
             {
+                var jumpPressed = (_input != null && _input.JumpPressedThisFrame) || Input.GetKeyDown(KeyCode.Space);
+                var aimHeld = (_input != null && _input.AimHeld) || Input.GetMouseButton(1);
+                var blockHeld = (_input != null && _input.BlockHeld) || Input.GetKey(KeyCode.Q);
+                var rollPressed = (_input != null && _input.RollPressedThisFrame) || Input.GetKeyDown(KeyCode.LeftAlt);
+                var attackPressedIs = _input != null && _input.AttackPressedThisFrame;
+                var attackPressedMouse = Input.GetMouseButtonDown(0);
+                var attackPressed = attackPressedIs || attackPressedMouse;
+                var attackHeld = Input.GetMouseButton(0) || (_input != null && _input.AttackHeld);
+                var attackReleased = Input.GetMouseButtonUp(0) || (_input != null && _input.AttackReleasedThisFrame);
+                var cancelPressed = (_input != null && _input.CancelPressedThisFrame) || Input.GetKeyDown(KeyCode.Escape);
+
                 // Jump (Space): pulse IsJumping while grounded
                 if (_hasIsJumping && isGrounded)
                 {
-                    if (Input.GetKeyDown(KeyCode.Space))
+                    if (jumpPressed)
                     {
                         _jumpTimer = _jumpPulseDuration;
                         _anim.SetBool(_isJumpingHash, true);
@@ -288,23 +321,21 @@ namespace Embervale.Networking
                 // Aim (RMB hold)
                 if (_hasIsAiming)
                 {
-                    var aiming = Input.GetMouseButton(1);
-                    _anim.SetBool(_isAimingHash, aiming);
+                    _anim.SetBool(_isAimingHash, aimHeld);
                     var equip = GetComponent<Embervale.Game.Combat.EquipmentState>();
-                    if (equip != null && equip.IsAiming.Value != aiming) equip.IsAiming.Value = aiming;
+                    if (equip != null && equip.IsAiming.Value != aimHeld) equip.IsAiming.Value = aimHeld;
                 }
 
                 // Block (Q hold)
                 if (_hasIsBlocking)
                 {
-                    var blocking = Input.GetKey(KeyCode.Q);
-                    _anim.SetBool(_isBlockingHash, blocking);
+                    _anim.SetBool(_isBlockingHash, blockHeld);
                     var equip = GetComponent<Embervale.Game.Combat.EquipmentState>();
-                    if (equip != null && equip.IsBlocking.Value != blocking) equip.IsBlocking.Value = blocking;
+                    if (equip != null && equip.IsBlocking.Value != blockHeld) equip.IsBlocking.Value = blockHeld;
                 }
 
                 // Roll (LeftAlt press)
-                if (_hasRoll && Input.GetKeyDown(KeyCode.LeftAlt))
+                if (_hasRoll && rollPressed)
                 {
                     _anim.ResetTrigger(_rollHash);
                     _anim.SetTrigger(_rollHash);
@@ -316,7 +347,7 @@ namespace Embervale.Networking
                 bool isAimingNow = _hasIsAiming && _anim.GetBool(_isAimingHash);
                 if (isUnarmed && !isAimingNow)
                 {
-                    if (Input.GetMouseButtonDown(0))
+                    if (attackPressed)
                     {
                         _lmbHeld = true;
                         _lmbDownElapsed = 0f;
@@ -335,7 +366,7 @@ namespace Embervale.Networking
                     if (_lmbHeld)
                     {
                         _lmbDownElapsed += Time.deltaTime;
-                        if (!_heavyFired && _lmbDownElapsed >= _heavyHoldSeconds)
+                        if (!_heavyFired && _lmbDownElapsed >= _heavyHoldSeconds && attackHeld)
                         {
                             // Fire heavy once when threshold passed
                             if (_hasAttackHeavy)
@@ -349,19 +380,18 @@ namespace Embervale.Networking
                             _heavyFired = true;
                             if (_unarmedLayer >= 0) _unarmedTimer = Mathf.Max(_unarmedTimer, unarmedHeavyDuration);
                         }
-                        if (Input.GetMouseButtonUp(0))
+                        if (attackReleased)
                         {
                             _lmbHeld = false;
                         }
                     }
                 }
-
                 // Bow draw/fire when aiming
                 if (_hasIsAiming && _anim.GetBool(_isAimingHash))
                 {
                     if (_hasBowDraw)
                     {
-                        if (Input.GetMouseButton(0))
+                        if (attackHeld)
                         {
                             _bowCharge = Mathf.Clamp01(_bowCharge + Time.deltaTime / _bowMaxChargeTime);
                         }
@@ -371,7 +401,7 @@ namespace Embervale.Networking
                         }
                         _anim.SetFloat(_bowDrawHash, _bowCharge);
                     }
-                    if (_hasBowFire && Input.GetMouseButtonUp(0))
+                    if (_hasBowFire && attackReleased)
                     {
                         var charge = _bowCharge;
                         _anim.ResetTrigger(_bowFireHash);
@@ -382,7 +412,7 @@ namespace Embervale.Networking
                         var aim = transform.forward;
                         if (atkCtl != null && IsOwner) atkCtl.TryAttackServerRpc(Embervale.Game.Combat.AttackInputKind.Charged, aim, charge);
                     }
-                    if (_hasBowCancel && Input.GetKeyDown(KeyCode.Escape))
+                    if (_hasBowCancel && cancelPressed)
                     {
                         _anim.ResetTrigger(_bowCancelHash);
                         _anim.SetTrigger(_bowCancelHash);

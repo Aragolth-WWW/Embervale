@@ -32,6 +32,7 @@ Runtime verification
 - In Play, select the player and open the Animator window:
   - Parameters: `AttackLight` pulses on LMB tap, `AttackHeavy` pulses on LMB hold (>0.35s).
   - Base Layer: Any State transitions to `Unarmed_Light_Base` / `Unarmed_Heavy_Base` fire then return to default.
+- If `AttackLight` never pulses, double-check the Input System `Player` action map: the `Attack` action must be bound (typically to LMB). The temporary `G` key fallback used for debugging has been removed.
 - If using Upper-layer: ensure the layer `UnarmedUpper` exists, weight returns to 0 when idle, and mask includes arms/fingers only.
 
 Foot IK (optional)
@@ -42,4 +43,3 @@ Foot IK (optional)
 Notes
 - Our movement is server-authoritative; keep Animator Root Motion OFF.
 - In FPS mode, body can be hidden. Press `V` to toggle TPS and verify arms/upper body.
-
