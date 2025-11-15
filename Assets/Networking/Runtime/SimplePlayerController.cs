@@ -10,6 +10,7 @@ namespace Embervale.Networking
     [RequireComponent(typeof(NetworkObject))]
     [RequireComponent(typeof(PlayerInputBridge))]
     [RequireComponent(typeof(SimpleAnimatorDriver))]
+    [RequireComponent(typeof(CharacterController))]
     public class SimplePlayerController : NetworkBehaviour
     {
         [Header("Movement (Synty-calibrated m/s)")]
@@ -17,25 +18,24 @@ namespace Embervale.Networking
         [SerializeField] private float runSpeed = 2.5f;   // Synty _runSpeed
         [SerializeField] private float sprintSpeed = 7f;   // Synty _sprintSpeed
         [SerializeField] private float rotateSpeed = 360f;
-        [Header("Grounding")]
-        [SerializeField] private bool groundToSurface = true;
-        [SerializeField] private LayerMask groundLayers = Physics.DefaultRaycastLayers;
-        [SerializeField] private float groundRayStart = 0.5f;
-        [SerializeField] private float groundRayLength = 5f;
-        [SerializeField] private float groundYOffset = 0f; // adjust if pivot not at feet
+        [Header("Character Controller")]
+        [SerializeField] private float controllerRadius = 0.4f;
+        [SerializeField] private float controllerHeight = 1.8f;
+        [SerializeField] private float controllerCenterY = 0.9f;
+        [SerializeField] private float controllerStepOffset = 0.3f;
+        [SerializeField] private float controllerSlopeLimit = 60f;
         [Header("Jump & Gravity")]
         [SerializeField, Tooltip("Meters above takeoff point the feet should reach at the jump apex.")]
         private float jumpApexHeight = 0.9f;
         [SerializeField, Tooltip("Negative value applied every second.")]
         private float gravity = -30f;
-        [SerializeField, Tooltip("How close to the ground before we snap and consider grounded.")]
-        private float groundedSnapDistance = 0.15f;
-
+        [Header("Jump & Gravity")]
         private Vector2 _lastInput;
         private bool _wantsSprint;
         private bool _wantsCrouch;
         private NetworkVariable<bool> _isCrouching = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         private PlayerInputBridge _input;
+        private CharacterController _character;
         private float _verticalVelocity;
         private bool _jumpQueued;
         private bool _isGrounded = true;
@@ -46,6 +46,7 @@ namespace Embervale.Networking
         private void Awake()
         {
             _input = GetComponent<PlayerInputBridge>();
+            EnsureCharacterController();
             EnsureAnimatorDriver();
             EnsureCombatComponents();
             EnsureFootIk();
@@ -144,16 +145,29 @@ namespace Embervale.Networking
         private void FixedUpdate()
         {
             if (!IsServer) return;
+            EnsureCharacterController();
+            if (_character == null) return;
 
-            var dir = new Vector3(_lastInput.x, 0, _lastInput.y);
             var dt = Time.fixedDeltaTime;
-            var pos = transform.position;
-            if (dir.sqrMagnitude > 0.0001f)
+            var inputDir = new Vector3(_lastInput.x, 0f, _lastInput.y);
+            Vector3 moveDir = inputDir.sqrMagnitude > 0.0001f ? inputDir.normalized : Vector3.zero;
+            if (moveDir.sqrMagnitude > 0f)
             {
-                var speed = _wantsCrouch ? crouchSpeed : (_wantsSprint ? sprintSpeed : runSpeed);
-                pos += dir.normalized * speed * dt;
-                var targetRot = Quaternion.LookRotation(dir.normalized, Vector3.up);
+                var targetRot = Quaternion.LookRotation(moveDir, Vector3.up);
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, rotateSpeed * dt);
+            }
+
+            var speed = _wantsCrouch ? crouchSpeed : (_wantsSprint ? sprintSpeed : runSpeed);
+            var planarVelocity = moveDir * speed;
+
+            if (_character.isGrounded)
+            {
+                _isGrounded = true;
+                if (_verticalVelocity < 0f) _verticalVelocity = -2f;
+            }
+            else
+            {
+                _isGrounded = false;
             }
 
             if (_jumpQueued && _isGrounded)
@@ -164,10 +178,22 @@ namespace Embervale.Networking
             }
 
             _verticalVelocity += gravity * dt;
-            pos.y += _verticalVelocity * dt;
-            transform.position = pos;
 
-            ResolveGrounding();
+            var motion = planarVelocity * dt;
+            motion.y = _verticalVelocity * dt;
+
+            var flags = _character.Move(motion);
+
+            if ((flags & CollisionFlags.Above) != 0 && _verticalVelocity > 0f)
+            {
+                _verticalVelocity = 0f;
+            }
+
+            if ((flags & CollisionFlags.Below) != 0 || _character.isGrounded)
+            {
+                _isGrounded = true;
+                if (_verticalVelocity < 0f) _verticalVelocity = -2f;
+            }
         }
 
         [ServerRpc]
@@ -234,33 +260,36 @@ namespace Embervale.Networking
         {
             return Mathf.Sqrt(Mathf.Max(0f, 2f * jumpApexHeight * -gravity));
         }
-
-        private void ResolveGrounding()
+#if UNITY_EDITOR
+        private void OnValidate()
         {
-            var pos = transform.position;
-            var start = pos + Vector3.up * groundRayStart;
-            if (Physics.Raycast(start, Vector3.down, out var hit, groundRayLength, groundLayers, QueryTriggerInteraction.Ignore))
+            if (!Application.isPlaying)
             {
-                var groundY = hit.point.y + groundYOffset;
-                var nearGround = pos.y <= groundY + groundedSnapDistance;
-                if ((groundToSurface && nearGround) || pos.y <= groundY)
-                {
-                    if (_verticalVelocity <= 0f)
-                    {
-                        pos.y = groundY;
-                        transform.position = pos;
-                        _isGrounded = true;
-                        _verticalVelocity = 0f;
-                        _jumpQueued = false;
-                        return;
-                    }
-                }
-                _isGrounded = nearGround && _verticalVelocity <= 0f;
+                _character = GetComponent<CharacterController>();
+                ConfigureCharacterController();
             }
-            else
+        }
+#endif
+
+        private void EnsureCharacterController()
+        {
+            if (_character == null)
             {
-                _isGrounded = false;
+                _character = GetComponent<CharacterController>() ?? gameObject.AddComponent<CharacterController>();
             }
+            ConfigureCharacterController();
+        }
+
+        private void ConfigureCharacterController()
+        {
+            if (_character == null) return;
+            _character.radius = controllerRadius;
+            _character.height = controllerHeight;
+            _character.stepOffset = controllerStepOffset;
+            _character.slopeLimit = controllerSlopeLimit;
+            var center = _character.center;
+            center.y = controllerCenterY;
+            _character.center = center;
         }
     }
 }

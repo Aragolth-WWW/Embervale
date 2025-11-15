@@ -67,6 +67,7 @@ Bow Combat
 
 - Animator must be Humanoid and have these parameters defined to respond; missing parameters are ignored safely.
 - Attack input comes entirely from `PlayerInputBridge` (Input System). The short-lived `G` key fallback used while debugging owner issues has been removed, so bind an `Attack` action in the asset when testing without a mouse.
+- Movement is server-authoritative through Unity's `CharacterController`, so collisions match the Synty demo setup. Tune radius/height/step offset on the `SimplePlayerController` component if you need more clearance.
 - Root Motion should remain OFF (server-authoritative movement). Jump is animation-only pulse unless vertical motion is later added.
 - Foot IK: enable IK Pass on the base layer to use `Assets/Animation/Runtime/SimpleFootIK.cs`.
 - Combat authoring: use `Tools → Embervale → Combat → Create Sample Assets` to generate starter `WeaponDef_*.asset` and `AttackDef_*.asset` files under `Assets/Game/Combat/Resources`.

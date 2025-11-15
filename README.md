@@ -43,6 +43,9 @@ Combat Animator (Build/Assign)
   Use these to switch approaches quickly when testing.
 - Input path: `SimpleAnimatorDriver` now listens only to the Input System attack action (`PlayerInputBridge`). The temporary `G` key fallback used during debugging has been removed, so bind LMB (or your preferred device) inside the actions asset when testing combat.
 
+Movement (Server Authoritative)
+- `SimplePlayerController` now drives a Unity `CharacterController` on the server so the player collides with Synty walls/props and keeps the same feel as the demo scenes. Radius/height/step offset are configurable on the component (defaults: radius 0.4, height 1.8, center 0.9).
+
 Animation (Synty Base Locomotion)
 - Driver feeds Synty parameters (MoveSpeed, Strafe X/Z, MovementInputHeld/Pressed/Tapped, IsGrounded, IsCrouching, IsWalking, IsStopped, IsStarting, CurrentGait, IsStrafing, ForwardStrafe, CameraRotationOffset) with Synty-like damping.
 - Run/Crouch speeds match Synty sample (2.5 m/s, 1.4 m/s); Sprint 7 m/s.
