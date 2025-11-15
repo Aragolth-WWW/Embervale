@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.Rendering.Universal;
+using Embervale.Game.Input;
 
 namespace Embervale.CameraSystem
 {
@@ -27,6 +28,11 @@ namespace Embervale.CameraSystem
         [SerializeField] private float tpsDistance = 4.0f;
         [SerializeField] private float tpsHeight = 1.7f;
         [SerializeField] private float tpsShoulder = 0.5f;
+        [Header("Camera Collision")]
+        [SerializeField] private LayerMask cameraCollisionMask = ~0;
+        [SerializeField] private float cameraCollisionRadius = 0.2f;
+        [SerializeField] private float cameraCollisionBuffer = 0.1f;
+        [SerializeField] private float cameraCollisionSmoothing = 10f;
 
         private Camera _cam;
         private Transform _camTransform;
@@ -34,6 +40,8 @@ namespace Embervale.CameraSystem
         private float _pitch;
         private bool _isFirstPerson;
         private SkinnedMeshRenderer[] _renderers;
+        private PlayerInputBridge _input;
+        private float _currentTpsDistance;
 
         public Vector3 PlanarForward
         {
@@ -56,6 +64,8 @@ namespace Embervale.CameraSystem
             if (!IsOwner) return;
             Current = this;
             if (followTarget == null) followTarget = transform;
+            _input = GetComponent<PlayerInputBridge>();
+            _currentTpsDistance = tpsDistance;
             EnsureRig();
         }
 
@@ -63,6 +73,7 @@ namespace Embervale.CameraSystem
         {
             if (Current == this) Current = null;
             if (_cam != null) Destroy(_cam.gameObject);
+            _input = null;
         }
 
         private void Update()
@@ -74,11 +85,25 @@ namespace Embervale.CameraSystem
 
             // Cursor lock toggle
             if (Input.GetKeyDown(KeyCode.Escape)) { Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
-            if (Input.GetMouseButtonDown(1)) { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
+            var aimHeld = _input != null ? _input.AimHeld : Input.GetMouseButton(1);
+            if (aimHeld && Cursor.lockState != CursorLockMode.Locked)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+            else if (_input == null && Input.GetMouseButtonDown(1))
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
 
             // Mouse look
-            var dx = Input.GetAxisRaw("Mouse X") * mouseSensitivity;
-            var dy = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
+            var look = _input != null
+                ? _input.Look
+                : new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
+            const float mouseDeltaScalar = 0.25f;
+            var dx = look.x * mouseSensitivity * mouseDeltaScalar;
+            var dy = look.y * mouseSensitivity * mouseDeltaScalar;
             _yaw += dx;
             _pitch = Mathf.Clamp(_pitch - dy, clampPitchMin, clampPitchMax);
         }
@@ -99,8 +124,19 @@ namespace Embervale.CameraSystem
             else
             {
                 var pivot = followTarget.position + Vector3.up * tpsHeight + followTarget.right * tpsShoulder;
-                var offset = rot * new Vector3(0, 0, -tpsDistance);
-                _camTransform.position = pivot + offset;
+                var desiredOffset = rot * new Vector3(0, 0, -tpsDistance);
+                var safeOffset = ResolveCameraCollision(pivot, desiredOffset);
+                var targetDistance = safeOffset.magnitude;
+                if (targetDistance > 0.001f)
+                {
+                    _currentTpsDistance = Mathf.Lerp(_currentTpsDistance, targetDistance, Time.deltaTime * cameraCollisionSmoothing);
+                    safeOffset = safeOffset.normalized * _currentTpsDistance;
+                }
+                else
+                {
+                    _currentTpsDistance = 0f;
+                }
+                _camTransform.position = pivot + safeOffset;
                 _camTransform.rotation = rot;
             }
 
@@ -155,6 +191,23 @@ namespace Embervale.CameraSystem
             }
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+        }
+
+        private Vector3 ResolveCameraCollision(Vector3 pivot, Vector3 desiredOffset)
+        {
+            var desiredDistance = desiredOffset.magnitude;
+            if (desiredDistance < 0.001f) return desiredOffset;
+            var dir = desiredOffset / desiredDistance;
+            if (Physics.SphereCast(pivot, cameraCollisionRadius, dir, out var hit, desiredDistance, cameraCollisionMask, QueryTriggerInteraction.Ignore))
+            {
+                // Don't collide with our own hierarchy
+                if (!hit.collider.transform.IsChildOf(transform))
+                {
+                    var clippedDistance = Mathf.Max(0f, hit.distance - cameraCollisionBuffer);
+                    return dir * clippedDistance;
+                }
+            }
+            return desiredOffset;
         }
     }
 }
