@@ -12,6 +12,7 @@ Primary implementation: `Assets/Networking/Runtime/SimpleAnimatorDriver.cs`, `As
 - Sprint: `Shift` (hold)
 - Crouch: `Ctrl` (hold)
 - Jump: `Space`
+  - Server-authoritative hop: feet peak around 0.9 m (adjust `SimplePlayerController.jumpApexHeight`).
 - Aim (Bow): `RMB` (hold)
 - Light attack (Sword): `LMB` (tap) when not aiming
 - Heavy attack (Sword): `LMB` (hold) + `Shift` when not aiming

@@ -44,8 +44,9 @@ Combat Animator (Build/Assign)
 - Input path: `SimpleAnimatorDriver` now listens only to the Input System attack action (`PlayerInputBridge`). The temporary `G` key fallback used during debugging has been removed, so bind LMB (or your preferred device) inside the actions asset when testing combat.
 
 Animation (Synty Base Locomotion)
-- Driver feeds Synty parameters (MoveSpeed, Strafe X/Z, MovementInputHeld/Pressed/Tapped, IsGrounded, IsCrouching, IsWalking, IsStopped, IsStarting, CurrentGait, IsStrafing, ForwardStrafe, CameraRotationOffset) with Synty‑like damping.
+- Driver feeds Synty parameters (MoveSpeed, Strafe X/Z, MovementInputHeld/Pressed/Tapped, IsGrounded, IsCrouching, IsWalking, IsStopped, IsStarting, CurrentGait, IsStrafing, ForwardStrafe, CameraRotationOffset) with Synty-like damping.
 - Run/Crouch speeds match Synty sample (2.5 m/s, 1.4 m/s); Sprint 7 m/s.
+- Jump apex height now comes from `SimplePlayerController.jumpApexHeight` (default 0.9 m), so the feet rise roughly 0.8–1.0 m off the ground even though movement stays server-authoritative.
 
 Combat Scaffold
 - Data: `Assets/Game/Combat/Runtime` (WeaponType, AttackDef, WeaponDef, AttackEvent, EquipmentState, AttackController, WeaponRegistry).
